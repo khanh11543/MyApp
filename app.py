@@ -1,16 +1,15 @@
 import streamlit as st
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error
 
-# 1. Tiêu đề
-st.title("💎 Diamond Sales Analysis App")
-st.markdown("A simple data science solution using Streamlit for data visualization and price prediction.")
+# Cấu hình giao diện
+st.set_page_config(page_title="Diamond Sales Analysis", layout="wide")
 
-# 2. Đọc dữ liệu
+# Tải dữ liệu
 @st.cache_data
 def load_data():
     df = pd.read_csv("sales_data.csv")
@@ -18,57 +17,75 @@ def load_data():
 
 df = load_data()
 
-# 3. Hiển thị dữ liệu gốc
-if st.checkbox("Show raw data"):
-    st.subheader("Raw Dataset")
-    st.write(df.head())
+# Hiển thị dữ liệu
+st.title("💎 Diamond Sales Data Analysis")
+st.write("### Preview of the Dataset")
+st.dataframe(df.head())
 
-# 4. Bộ lọc dữ liệu
-st.sidebar.header("Filter Options")
-cut_filter = st.sidebar.multiselect("Select Cut", df['cut'].unique(), default=df['cut'].unique())
-color_filter = st.sidebar.multiselect("Select Color", df['color'].unique(), default=df['color'].unique())
+# Biểu đồ 1: Tổng doanh số theo tháng
+st.write("### 📊 Total Sales by Month")
+monthly_sales = df.groupby('Month')['Sales'].sum().reset_index()
+fig1 = plt.figure(figsize=(10,5))
+sns.lineplot(data=monthly_sales, x='Month', y='Sales', marker='o')
+plt.xticks(rotation=45)
+plt.title("Monthly Sales Trend")
+st.pyplot(fig1)
 
-filtered_df = df[(df['cut'].isin(cut_filter)) & (df['color'].isin(color_filter))]
+# Biểu đồ 2: Doanh số theo sản phẩm
+st.write("### 📈 Sales by Product")
+product_sales = df.groupby('Product')['Sales'].sum().sort_values(ascending=False)
+fig2 = plt.figure(figsize=(10,5))
+sns.barplot(x=product_sales.index, y=product_sales.values)
+plt.xticks(rotation=45)
+plt.title("Sales by Product")
+st.pyplot(fig2)
 
-st.subheader("Filtered Dataset")
-st.write(filtered_df.head())
+# Biểu đồ 3: Số lượng bán theo sản phẩm
+st.write("### 📦 Quantity Sold by Product")
+fig3 = plt.figure(figsize=(10,5))
+sns.barplot(data=df, x='Product', y='Quantity')
+plt.xticks(rotation=45)
+plt.title("Quantity Sold per Product")
+st.pyplot(fig3)
 
-# 5. Biểu đồ trực quan
-st.subheader("📊 Visualization")
+# Biểu đồ 4: Biểu đồ phân phối giá bán
+st.write("### 💰 Price Distribution")
+fig4 = plt.figure(figsize=(8,5))
+sns.histplot(df['Price'], bins=20, kde=True)
+plt.title("Price Distribution")
+st.pyplot(fig4)
 
-chart = st.selectbox("Choose a chart to display", ["Price by Cut", "Price vs Carat", "Boxplot of Price by Color"])
+# Biểu đồ 5: Tương quan giá và số lượng
+st.write("### 📉 Correlation between Price and Quantity")
+fig5 = plt.figure(figsize=(8,5))
+sns.scatterplot(data=df, x='Price', y='Quantity')
+plt.title("Price vs Quantity Sold")
+st.pyplot(fig5)
 
-if chart == "Price by Cut":
-    fig = plt.figure(figsize=(8,4))
-    sns.barplot(data=filtered_df, x='cut', y='price')
-    st.pyplot(fig)
+# Mô hình dự báo doanh số bằng Linear Regression
+st.write("## 🤖 Sales Prediction Model")
 
-elif chart == "Price vs Carat":
-    fig = plt.figure(figsize=(8,4))
-    sns.scatterplot(data=filtered_df, x='carat', y='price', hue='cut')
-    st.pyplot(fig)
+# Lựa chọn biến đầu vào
+features = ['Price', 'Quantity']
+target = 'Sales'
 
-elif chart == "Boxplot of Price by Color":
-    fig = plt.figure(figsize=(8,4))
-    sns.boxplot(data=filtered_df, x='color', y='price')
-    st.pyplot(fig)
-
-# 6. Dự đoán giá bằng Linear Regression
-st.subheader("📈 Predict Price using Linear Regression")
-
-# Encode categorical variables
-df_encoded = pd.get_dummies(df[['carat', 'cut', 'color', 'clarity']])
-df_encoded['price'] = df['price']
-
-X = df_encoded.drop('price', axis=1)
-y = df_encoded['price']
+X = df[features]
+y = df[target]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 model = LinearRegression()
 model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
+mse = mean_squared_error(y_test, y_pred)
 
-st.write(f"**MAE:** {mean_absolute_error(y_test, y_pred):.2f}")
-st.write(f"**RMSE:** {mean_squared_error(y_test, y_pred, squared=True) ** 0.5:.2f}")
-st.write(f"**R² Score:** {r2_score(y_test, y_pred):.2f}")
+st.write(f"**Mean Squared Error (MSE)**: {mse:.2f}")
+
+# Dự đoán thử từ input người dùng
+st.write("### 🧪 Try Sales Prediction")
+
+price_input = st.number_input("Enter Price", value=100.0)
+quantity_input = st.number_input("Enter Quantity", value=1)
+
+predicted_sales = model.predict([[price_input, quantity_input]])
+st.success(f"📊 Predicted Sales: {predicted_sales[0]:.2f}")
