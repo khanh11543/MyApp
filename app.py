@@ -57,10 +57,18 @@ st.pyplot(fig4)
 
 # Biểu đồ 5: Tương quan giá và số lượng
 st.write("### 📉 Correlation between Price and Quantity")
-fig5 = plt.figure(figsize=(8,5))
-sns.scatterplot(data=df, x='Price', y='Quantity')
-plt.title("Price vs Quantity Sold")
-st.pyplot(fig5)
+
+# Xử lý dữ liệu: loại bỏ các dòng có NaN trong Price hoặc Quantity
+df_corr = df[['Price', 'Quantity']].dropna()
+
+# Kiểm tra nếu dữ liệu hợp lệ
+if df_corr.empty:
+    st.warning("Không có dữ liệu hợp lệ để hiển thị biểu đồ tương quan.")
+else:
+    fig5 = plt.figure(figsize=(8,5))
+    sns.scatterplot(data=df_corr, x='Price', y='Quantity')
+    plt.title("Price vs Quantity Sold")
+    st.pyplot(fig5)
 
 # Mô hình dự báo doanh số bằng Linear Regression
 st.write("## 🤖 Sales Prediction Model")
