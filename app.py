@@ -55,20 +55,31 @@ sns.histplot(df['Price'], bins=20, kde=True)
 plt.title("Price Distribution")
 st.pyplot(fig4)
 
+data = {
+    'Month': ['Jan', 'Jan', 'Feb', 'Feb', 'Mar', 'Mar', 'Apr'],
+    'Product': ['Diamond A', 'Diamond B', 'Diamond A', 'Diamond B', 'Diamond C', 'Diamond A', 'Diamond B'],
+    'Price': [500, 300, 520, 310, 400, 510, 305],
+    'Quantity': [3, 2, 4, 5, 2, 2, 3],
+    'Sales': [1500, 600, 2080, 1550, 800, 1020, 915]
+}
+
+df = pd.DataFrame(data)
+
 # Biểu đồ 5: Tương quan giá và số lượng
 st.write("### 📉 Correlation between Price and Quantity")
 
-# Xử lý dữ liệu: loại bỏ các dòng có NaN trong Price hoặc Quantity
-df_corr = df[['Price', 'Quantity']].dropna()
+# Đảm bảo đúng kiểu dữ liệu
+df['Price'] = pd.to_numeric(df['Price'], errors='coerce')
+df['Quantity'] = pd.to_numeric(df['Quantity'], errors='coerce')
 
-# Kiểm tra nếu dữ liệu hợp lệ
-if df_corr.empty:
-    st.warning("Không có dữ liệu hợp lệ để hiển thị biểu đồ tương quan.")
-else:
-    fig5 = plt.figure(figsize=(8,5))
-    sns.scatterplot(data=df_corr, x='Price', y='Quantity')
-    plt.title("Price vs Quantity Sold")
-    st.pyplot(fig5)
+# Vẽ biểu đồ
+fig5 = plt.figure(figsize=(8,5))
+sns.scatterplot(data=df, x='Price', y='Quantity', hue='Product', s=100)
+plt.title("Price vs Quantity Sold")
+plt.xlabel("Price")
+plt.ylabel("Quantity")
+plt.grid(True)
+st.pyplot(fig5)
 
 # Mô hình dự báo doanh số bằng Linear Regression
 st.write("## 🤖 Sales Prediction Model")
